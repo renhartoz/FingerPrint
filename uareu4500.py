@@ -11,6 +11,13 @@ fingerprint_lib = ctypes.CDLL(dll_path, winmode=0)
 fingerprint_lib.scan_fingerprint.argtypes = [ctypes.c_char_p]
 fingerprint_lib.scan_fingerprint.restype = ctypes.c_int
 
+fingerprint_lib.cancel_scan.argtypes = []
+fingerprint_lib.cancel_scan.restype = None
+
+def cancel_scan():
+    """Cancel an ongoing fingerprint scan."""
+    fingerprint_lib.cancel_scan()
+
 def capture_fingerprint(output_filename="fingerprint.bmp"):
     """Capture a fingerprint and save as a BMP image."""
     result = fingerprint_lib.scan_fingerprint(output_filename.encode('utf-8'))

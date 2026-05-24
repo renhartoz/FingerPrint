@@ -16,13 +16,13 @@ I made all the compilations of this project on Windows (Thats my target OS so de
 If you want to modify the uareu4500.cpp file and make you own custom dll, you gotta use the following command:
 
 ```
-g++ -shared -o uareu4500.dll uareu4500.cpp -Idpfpdd/include -Ldpfpdd/lib -ldpfpdd -Idpfj/include -Ldpfj/lib -ldpfj -I/mingw64/include -L/mingw64/lib -lssl -lcrypto
+g++ -shared -o uareu4500.dll uareu4500.cpp -Iinclude -Llib -ldpfpdd -ldpfj -I/mingw64/include -L/mingw64/lib -lssl -lcrypto
 ```
 
 This will make a .dll only functional on the compiling device, to make a portable .dll, use the static version:
 
 ```
-g++ -shared -o uareu4500.dll uareu4500.cpp -Idpfpdd/include -Ldpfpdd/lib -ldpfpdd -Idpfj/include -Ldpfj/lib -ldpfj -I/mingw64/include -L/mingw64/lib -l:libssl.a -l:libcrypto.a -static-libgcc -static-libstdc++ -lws2_32 -lcrypt32
+g++ -shared -o uareu4500.dll uareu4500.cpp -Iinclude -Llib -ldpfpdd -ldpfj -I/mingw64/include -L/mingw64/lib -l:libssl.a -l:libcrypto.a -static-libgcc -static-libstdc++ -lws2_32 -lcrypt32
 ```
 
 Note: you have to install OpenSSL, for MSYS on Windows you can use the following command
@@ -35,7 +35,7 @@ pacman -S mingw-w64-x86_64-openssl
 In the other hand, to generate a .exe (Mostly for debugging and testing purposes) i used the following command:
 
 ```
-g++ -o uareu4500.exe uareu4500.cpp -Idpfpdd/include -Ldpfpdd/lib -ldpfpdd -Idpfj/include -Ldpfj/lib -ldpfj -I/mingw64/include -L/mingw64/lib -lssl -lcrypto
+g++ -o uareu4500.exe uareu4500.cpp -Iinclude -Llib -ldpfpdd -ldpfj -I/mingw64/include -L/mingw64/lib -lssl -lcrypto
 ```
 
 ## Side notes

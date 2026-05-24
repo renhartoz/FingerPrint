@@ -2,6 +2,7 @@ import os, sys
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox, filedialog
+import threading
 from PIL import Image, ImageTk, ImageFile
 import uareu4500
 
@@ -23,7 +24,9 @@ class FingerPrintStyle:
         self.style.configure("title.TLabel", font=("Arial", 18, "bold"), background="#f0f0f0", foreground="#0754c6")
         self.style.configure("text.TLabel", font=("Arial", 12), background="#f0f0f0")
         self.style.configure("button.TButton", background="#f0f0f0", foreground="#0754c6", underline="center", font=("Arial", 12))
-        self.style.map("button.TButton", background=[('active','#0754c6'), ('!disabled',"#f0f0f0")],foreground=[('active','#f0f0f0'), ('!disabled',"#0754c6")])
+        self.style.map("button.TButton", 
+                       background=[('disabled', '#d3d3d3'), ('active', '#0754c6'), ('!disabled', '#f0f0f0')],
+                       foreground=[('disabled', '#a0a0a0'), ('active', '#f0f0f0'), ('!disabled', '#0754c6')])
         self.style.configure("status_black.TLabel", foreground="black")
         self.style.configure("status_blue.TLabel", foreground="blue")
         self.style.configure("status_green.TLabel", foreground="green")
@@ -36,13 +39,14 @@ class FingerprintApp:
         self.root.iconbitmap(icon_path)
         
         self.width = 800
-        self.height = root.winfo_screenheight()
+        self.height = 600
         self.root.geometry(f"{self.width}x{self.height}")
         
         root.columnconfigure(0, weight=1)
         root.columnconfigure(1, weight=15)
         root.columnconfigure(2, weight=1)
         self.file_path = tk.StringVar()
+        self.is_scanning = False
         
         self.logo = Image.open(logo_path)
         self.logo = self.logo.resize((100, 100))
@@ -63,7 +67,7 @@ class FingerprintApp:
         self.select_path_button = ttk.Button(root, text="📁 Browse", command=self.select_save_location, width=10, style="button.TButton", compound="center")
         self.select_path_button.grid(row=1, column=2, padx=5, pady=5, ipady=5)
         
-        self.canvas = tk.Canvas(root, width=500, height=550, bg="#ffffff")
+        self.canvas = tk.Canvas(root, width=273, height=344, bg="#ffffff")
         self.canvas.grid(row=2, column=0, columnspan=3, pady=10)
         
         self.scan_button = ttk.Button(root, text="Scan Fingerprint", command=self.scan_fingerprint, state=tk.DISABLED, style="button.TButton", compound="center")
@@ -81,17 +85,38 @@ class FingerprintApp:
 
     def scan_fingerprint(self):
         """Capture the fingerprint and save it to the preselected location."""
+        if self.is_scanning:
+            # Cancel the ongoing scan
+            uareu4500.cancel_scan()
+            return
+
         if not self.file_path.get():
             messagebox.showerror("Error", "Please select a save location first!")
             return
-        save_directory = os.path.dirname(self.file_path.get())
-        self.bmp_path_temp = os.path.join(save_directory, "fingerprint_temp.bmp")
-        self.bmp_path = uareu4500.capture_fingerprint(self.bmp_path_temp)
-        if self.bmp_path:
+            
+        self.is_scanning = True
+        self.scan_button.config(text="Cancel Scanning")
+        self.select_path_button.config(state=tk.DISABLED)
+
+        def run_scan():
+            save_directory = os.path.dirname(self.file_path.get())
+            self.bmp_path_temp = os.path.join(save_directory, "fingerprint_temp.bmp")
+            bmp_path = uareu4500.capture_fingerprint(self.bmp_path_temp)
+            self.root.after(0, self.on_scan_complete, bmp_path)
+
+        threading.Thread(target=run_scan, daemon=True).start()
+
+    def on_scan_complete(self, bmp_path):
+        self.is_scanning = False
+        self.scan_button.config(text="Scan Fingerprint")
+        self.select_path_button.config(state=tk.NORMAL)
+
+        if bmp_path:
+            self.bmp_path = bmp_path
             try:
                 image = Image.open(self.bmp_path)
                 image.load()
-                image = image.resize((500, 550))
+                
                 self.tk_image = ImageTk.PhotoImage(image)
                 self.canvas.create_image(0, 0, anchor="nw", image=self.tk_image)
 
@@ -103,7 +128,7 @@ class FingerprintApp:
             except Exception as e:
                 messagebox.showerror("Image Error", f"Failed to load image: {e}")
         else:
-            messagebox.showerror("Capture Failed", "Failed to capture fingerprint!")
+            messagebox.showwarning("Capture Stopped", "Fingerprint capture was canceled or failed.")
 
 if __name__ == "__main__":
     root = tk.Tk()

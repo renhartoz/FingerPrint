@@ -44,11 +44,12 @@ public:
     std::vector<uint8_t> data;
 
     BMP(int32_t width, int32_t height) {
+        int32_t row_stride = (width + 3) & ~3;
         info_header.width = width;
         info_header.height = -height; // Top-down image
-        info_header.size_image = width * height;
+        info_header.size_image = row_stride * height;
         file_header.file_size = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader) + 1024 + info_header.size_image;
-        data.resize(info_header.size_image);
+        data.resize(info_header.size_image, 0);
 
         // Create grayscale color table
         color_table.resize(256);
